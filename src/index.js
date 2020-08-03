@@ -17,8 +17,6 @@ for(let i = 0; i < 20; i++){
     graphObjs.push(new graphUtils.func(i + `*(${expr.value})`));
 }
 
-let __svg = document.getElementsByTagName('svg')[0];
-
 function init() {
     window.w = container.clientWidth; window.h = container.clientHeight;
     transMatrix = ([
@@ -26,14 +24,25 @@ function init() {
         0, -20, 0,
         w / 2, h / 2, 1
     ]);
-    __svg.settings = getSettings();
+    
+    let __svg = {
+        html: "",
+        getOuterHTML(){
+            let SVG = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`);
+            let dm = difference(transMatrix, this.settings.m);
+            SVG.setAttribute('viewBox', getViewBox(dm));
+            SVG.setAttribute('width', w);
+            SVG.setAttribute('height', h);
+            let result = SVG.outerHTML.slice(0, -6) + this.html + '</svg>';
+            return result;
+        },
+        settings: getSettings()
+    };
     Object.defineProperty(window, 'svg', {
         get() {
             return __svg;
         },
         set(v) {
-            container.appendChild(v);
-            __svg.remove();
             __svg = v;
         }
     });
@@ -46,18 +55,23 @@ function generateSVG(s) {
         genSVGstatus.generating();
         //////////////
         ////////
-        let SVG = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`);
         let html = '';
         for (let obj of graphObjs) { html += obj.generateHtml(s); }
-        SVG.innerHTML = html;
         ////////
         //////////////
-        let dm = difference(transMatrix, s.m);
-        SVG.setAttribute('viewBox', getViewBox(dm));
-        SVG.setAttribute('width', w);
-        SVG.setAttribute('height', h);
-        SVG.settings = s;
-        svg = SVG;
+        svg = {
+            html,
+            getOuterHTML(){
+                let SVG = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`);
+                let dm = difference(transMatrix, this.settings.m);
+                SVG.setAttribute('viewBox', getViewBox(dm));
+                SVG.setAttribute('width', w);
+                SVG.setAttribute('height', h);
+                let result = SVG.outerHTML.slice(0, -6) + this.html + '</svg>';
+                return result;
+            },
+            settings: s
+        };
         genSVGstatus.generated();
     }
 }
@@ -88,19 +102,21 @@ async function update(force = false) {
     }
 }
 
-function draw() {
+export function draw() {
     if (drawStatus.isAllowed()) {
         drawStatus.drawing();
-        let dm = difference(transMatrix, svg.settings.m);
-        svg.setAttribute('viewBox', getViewBox(dm));
-        svg.setAttribute('width', w);
-        svg.setAttribute('height', h);
 
-        if (drawStatus.isReAllowed()) {
+        svgToImage(svg.getOuterHTML(), image=>{
+            canvas.width=w * devicePixelRatio; canvas.height=h* devicePixelRatio;
+            // ctx.clearRect(0,0,w,h);
+            ctx.drawImage(image,0,0,w,h);
+            if (drawStatus.isReAllowed()) {
+                drawStatus.drawed();
+                draw(...drawStatus.redrawArgs);
+            }
             drawStatus.drawed();
-            draw(...drawStatus.redrawArgs);
-        }
-        drawStatus.drawed();
+        });
+
     } else if (drawStatus.is(drawStatus.DRAWING)) {
         drawStatus.redraw(arguments);
     }

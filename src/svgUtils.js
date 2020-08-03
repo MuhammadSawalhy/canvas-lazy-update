@@ -40,6 +40,10 @@ export class path extends base{
         this.d = '';
         this.attrs.d = this.d;
     }
+    clearData(){
+        this.d = '';
+        this.elm.setAttribute("d", '');
+    }
 }
 
 export default {
