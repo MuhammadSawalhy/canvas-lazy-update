@@ -1,0 +1,38 @@
+body {
+  margin: 0;
+}
+
+.app{
+  height: 100vh;
+  display: flex;
+  flex-flow: column nowrap;
+}
+
+.container {
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: black;
+}
+
+canvas, svg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+}
+
+svg{
+  z-index: -1;
+}
+
+.options {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  padding: 5px;
+}
+
