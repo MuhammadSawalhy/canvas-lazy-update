@@ -33,6 +33,10 @@ export class path extends base{
         if(close) this.d += "z";
         this.elm.setAttribute("d", this.d);
     }
+    clearData(){
+        this.d = '';
+        this.elm.setAttribute("d", '');
+    }
 }
 
 export default {

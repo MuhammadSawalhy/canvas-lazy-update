@@ -11,20 +11,20 @@ export class func{
         this.path = new svgUtils.path(pen);
     }
 
-    generateHtml(){
+    generateHtml(s){
         this.path.d = "";
-        let point = coorm.reverse(0, 0);
-        point = coorm.transform(point.x, this.expr(point.x));
+        let point = coorm.transform(s.vp.xmin, this.expr(s.vp.xmin), s.m); 
         this.path.moveTo(point.x, point.y);
         let n = count.value*w/pxCount;
         for (let i = 1; i < n; i++) {
-            point = coorm.reverse(i/n*w, 0);
-            point = coorm.transform(point.x, this.expr(point.x) );
+            var x = i/n * s.vp.xwidth + s.vp.xmin;
+            point = coorm.transform(x, this.expr(x), s.m); 
             this.path.lineTo(point.x, point.y);
         }
         this.path.endPath(false);
         return this.path.html;
     }
+
 }
 
 export default {

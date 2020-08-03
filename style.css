@@ -16,7 +16,7 @@ body {
   background-color: black;
 }
 
-canvas, svg {
+svg {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -25,9 +25,6 @@ canvas, svg {
   height: 100%;
 }
 
-svg{
-  z-index: -1;
-}
 
 .options {
   display: flex;

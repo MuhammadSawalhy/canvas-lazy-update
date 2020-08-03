@@ -8,7 +8,12 @@ class StatusManager{
         let statuesObj = {};
         statuses.forEach(a=>{
             statuesObj[a.toUpperCase()] = a;
-            statuesObj[a] = function(){ this.status = a; };
+            statuesObj[a] = function(args){
+                if(a === this.statuses[1]){
+                    this[a + "Args"] = args;
+                }
+                this.status = a;
+            };
         });
         Object.assign(this, statuesObj);
         //#endregion
