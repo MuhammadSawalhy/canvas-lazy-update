@@ -27,7 +27,7 @@ type Target = {|
 const targets /*: Array<Target> */ = [
     {
         name: 'lazy-update',
-        entry: './src/index.js',
+        entry: ['@babel/polyfill', './src/index.js'], // polyfill for some code such as async function. 
         library: 'lazyUpdate',
     },
 ];
@@ -35,8 +35,7 @@ const targets /*: Array<Target> */ = [
 /**
  * Create a webpack config for given target
  */
-function createConfig(target /*: Target */, dev /*: boolean */,
-        minimize /*: boolean */) /*: Object */ {
+function createConfig(target, dev, minimize, server) /*: Object */ {
     const cssLoaders /*: Array<Object> */ = [{loader: 'css-loader'}];
     if (minimize) {
         cssLoaders[0].options = {importLoaders: 1};
@@ -84,17 +83,13 @@ function createConfig(target /*: Target */, dev /*: boolean */,
         module: {
             rules: [
                 {
-                    test: /\.js$/,
-                    exclude: /node_modules/,
-                    use: 'babel-loader',
-                },
-                {
                     test: /\.css$/,
                     use: [
                         dev ? 'style-loader' : MiniCssExtractPlugin.loader,
                         ...cssLoaders,
                     ],
                 },
+                
                 {
                     test: /\.sass$/,
                     use: [
@@ -106,6 +101,13 @@ function createConfig(target /*: Target */, dev /*: boolean */,
                         },
                     ],
                 },
+
+                {
+                    test: /\.js$/,
+                    exclude: /node_modules/,
+                    use: 'babel-loader',
+                },
+                
                 // {
                 //     test: /\.(ttf|woff|woff2)$/,
                 //     use: [{
@@ -119,9 +121,10 @@ function createConfig(target /*: Target */, dev /*: boolean */,
         },
         // externals: 'katex',
         plugins: [
-            new CleanWebpackPlugin(),
+            !server && new CleanWebpackPlugin(),
             new HtmlWebpackPlugin({
                 title: 'lazy drawings update',
+                template: './index.html'
             }),
             !dev && new MiniCssExtractPlugin({
                 filename: minimize ? '[name].min.css' : '[name].css',
@@ -134,7 +137,7 @@ function createConfig(target /*: Target */, dev /*: boolean */,
                 new TerserPlugin({
                     terserOptions: {
                         output: {
-                            ascii_only: true,
+                            // ascii_only: true,
                         },
                     },
                 }),

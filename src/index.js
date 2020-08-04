@@ -1,17 +1,17 @@
-import './../style.css';
+import './style/style.css';
 
 import { count, expr, pxCount, container, autoUpdate, createElement } from './global.js';
 import { DrawStatusManager, UpdateStatusManager, GenSVGStatusManager } from './StatusManager.js';
-import { getViewport, getViewBox } from './coorManager.js';
+import { getSettings, getViewBox } from './coorManager.js';
 import graphUtils from './graphUtils.js';
 import coorm from "./coorManager.js";
 import svgToImage from './svgToImage.js';
 
-export const drawStatus = new DrawStatusManager();
-export const updateStatus = new UpdateStatusManager();
-export const genSVGstatus = new GenSVGStatusManager();
+const drawStatus = new DrawStatusManager();
+const updateStatus = new UpdateStatusManager();
+const genSVGstatus = new GenSVGStatusManager();
 
-export let graphObjs = [];
+let graphObjs = [];
 
 for(let i = 0; i < 20; i++){
     graphObjs.push(new graphUtils.func(i + `*(${expr.value})`));
@@ -26,7 +26,6 @@ function init() {
         0, -20, 0,
         w / 2, h / 2, 1
     ]);
-
     __svg.settings = getSettings();
     Object.defineProperty(window, 'svg', {
         get() {
@@ -40,12 +39,14 @@ function init() {
     });
 }
 
+let a = 1;
+
 function generateSVG(s) {
     if (genSVGstatus.isAllowed()) {
         genSVGstatus.generating();
         //////////////
         ////////
-        let SVG = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`)
+        let SVG = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`);
         let html = '';
         for (let obj of graphObjs) { html += obj.generateHtml(s); }
         SVG.innerHTML = html;
@@ -61,7 +62,7 @@ function generateSVG(s) {
     }
 }
 
-export async function update(force = false) {
+async function update(force = false) {
 
     if (autoUpdate || force) {
         if (updateStatus.isAllowed()) {
@@ -87,7 +88,7 @@ export async function update(force = false) {
     }
 }
 
-export function draw() {
+function draw() {
     if (drawStatus.isAllowed()) {
         drawStatus.drawing();
         let dm = difference(transMatrix, svg.settings.m);
@@ -107,23 +108,6 @@ export function draw() {
 
 function timeout(ms) { //pass a time in milliseconds to this function
     return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-export function getSettings(m, clone = true) {
-    m = m || transMatrix;
-    if (clone) {
-        return {
-            vp: getViewport(m),
-            m: [...m],
-            r: [...m.inverse],
-        };
-    } else {
-        return {
-            vp: getViewport(m),
-            m: (m),
-            r: (m.inverse),
-        };
-    }
 }
 
 function difference(a, b) {

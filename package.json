@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "gl-matrix.js",
+  "mode": "",
   "scripts": {
-    "build": "npx webpack",
-    "serve": "npx webpack-dev-server --config webpack.dev.js"
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "serve": "webpack-dev-server --config webpack.dev.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +17,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.11.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.11.0",
+    "@babel/polyfill": "^7.10.4",
     "@babel/preset-env": "^7.11.0",
     "babel-loader": "^8.1.0",
     "clean-webpack-plugin": "^3.0.0",

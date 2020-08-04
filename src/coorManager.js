@@ -1,5 +1,4 @@
 import {mat3} from 'gl-matrix';
-import {getSettings} from './index.js';
 
 let m = mat3.create(), r = mat3.create();
 Object.defineProperty(window, 'transMatrix', {
@@ -47,6 +46,23 @@ export function getViewport(m){
     };
     
     return vp;
+}
+
+export function getSettings(m, clone = true) {
+    m = m || transMatrix;
+    if (clone) {
+        return {
+            vp: getViewport(m),
+            m: [...m],
+            r: [...m.inverse],
+        };
+    } else {
+        return {
+            vp: getViewport(m),
+            m: (m),
+            r: (m.inverse),
+        };
+    }
 }
 
 export default {
