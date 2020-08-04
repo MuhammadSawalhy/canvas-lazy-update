@@ -13,7 +13,7 @@ export const genSVGstatus = new GenSVGStatusManager();
 
 export let graphObjs = [];
 
-for(let i = 0; i < 100; i++){
+for(let i = 0; i < 20; i++){
     graphObjs.push(new graphUtils.func(i + `*(${expr.value})`));
 }
 
@@ -48,10 +48,7 @@ function generateSVG(s) {
         let SVG = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`)
         let html = '';
         for (let obj of graphObjs) { html += obj.generateHtml(s); }
-        console.time('d');
-        console.log(html.length);
         SVG.innerHTML = html;
-        console.timeEnd('d');
         ////////
         //////////////
         let dm = difference(transMatrix, s.m);
@@ -72,14 +69,15 @@ export async function update(force = false) {
             let s = getSettings();
 
             // await timeout(200);
-
             setTimeout(()=>{
-                generateSVG(s);
-                if (updateStatus.isReAllowed()) {
-                    updateStatus.updated();
-                    update(...updateStatus.reupdateArgs);
-                }
-                updateStatus.updated();
+                
+                            generateSVG(s);
+                            
+                            if (updateStatus.isReAllowed()) {
+                                updateStatus.updated();
+                                update(...updateStatus.reupdateArgs);
+                            }
+                            updateStatus.updated();
             }, 0);
             
             
@@ -191,3 +189,5 @@ init();
 
 window.onresize();
 if (!autoUpdate) update(true);
+
+

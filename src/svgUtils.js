@@ -1,20 +1,23 @@
 class base{
-    constructor(type, attr={}){
+    constructor(type, attrs={}){
         this.elm = document.createElement(type);
-        this.setAttributes(attr);
+        this.attrs = attrs;
         this.type = type;
     }
 
     get html(){
-        return this.elm.outerHTML.slice(0, -4-this.type.length) + '/>';
+        let attrs = this.getAttributes();
+        return `<${this.type} ${attrs}/>`;
     }
 
-    setAttributes(attr={}){
-        for (let a in attr){
-            if (!attr.hasOwnProperty(a)) continue;
-            this.elm.setAttribute(a, attr[a]);
+    getAttributes(){
+        let result = '';
+        for (let a in this.attrs){
+            result += `${a}="${this.attrs[a]}" `;
         }
-    }
+        return result;
+    } 
+
 }
 
 export class path extends base{
@@ -31,11 +34,11 @@ export class path extends base{
     }
     endPath(close){
         if(close) this.d += "z";
-        this.elm.setAttribute("d", this.d);
+        this.attrs.d = this.d;
     }
     clearData(){
         this.d = '';
-        this.elm.setAttribute("d", '');
+        this.attrs.d = this.d;
     }
 }
 
