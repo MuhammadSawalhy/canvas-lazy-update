@@ -1,3 +1,5 @@
+import './../style.css';
+
 import graphUtils from './graphUtils.js';
 import coorm from "./coorManager.js";
 import { debug, count, expr, pxCount, container, canvas, ctx, svg } from './global.js';

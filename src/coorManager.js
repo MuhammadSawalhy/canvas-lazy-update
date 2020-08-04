@@ -1,3 +1,6 @@
+import {mat3} from 'gl-matrix';
+
+
 let m = mat3.create(), r = mat3.create();
 Object.defineProperty(window, 'transMatrix', {
     get() {
