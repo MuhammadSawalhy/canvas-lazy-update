@@ -2,6 +2,7 @@
 
 export const pxCount = 100;
 export const autoUpdate = true;
+export const drawTo = 'canvas';
 
 export const count = document.getElementById('count');
 export const expr = document.getElementById('expr');
@@ -17,14 +18,13 @@ export function createElement(html){
     return div.firstElementChild;
 }
 
-// export const svg = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`)
-
-// window.svg = svg;
+export const svgElm = document.querySelector('svg');
 
 export default {
     
     pxCount,
     autoUpdate,
+    drawTo,
     
     count,
     expr,
@@ -33,7 +33,7 @@ export default {
     canvas,
     ctx,
     image,
-    // svg,
+    svgElm,
 
     createElement,
 };

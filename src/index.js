@@ -1,8 +1,19 @@
 import './style/style.css';
 
-import { count, expr, pxCount, container, autoUpdate, createElement } from './global.js';
-import { DrawStatusManager, UpdateStatusManager, GenSVGStatusManager } from './StatusManager.js';
-import { getSettings, getViewBox } from './coorManager.js';
+import { 
+    pxCount, drawTo, autoUpdate,
+    count, expr,
+    container, canvas, ctx, svgElm,
+} from './global.js';
+
+import { 
+    DrawStatusManager, UpdateStatusManager, GenSVGStatusManager
+} from './StatusManager.js';
+
+import { 
+    getSettings, getViewBox
+} from './coorManager.js';
+
 import graphUtils from './graphUtils.js';
 import coorm from "./coorManager.js";
 import svgToImage from './svgToImage.js';
@@ -13,7 +24,7 @@ const genSVGstatus = new GenSVGStatusManager();
 
 let graphObjs = [];
 
-for(let i = 0; i < 20; i++){
+for (let i = 0; i < 20; i++) {
     graphObjs.push(new graphUtils.func(i + `*(${expr.value})`));
 }
 
@@ -24,17 +35,18 @@ function init() {
         0, -20, 0,
         w / 2, h / 2, 1
     ]);
-    
+
+    if(drawTo === 'canvas'){
+        svgElm.remove();
+    }else{
+        canvas.remove();
+    }
+
     let __svg = {
         html: "",
-        getOuterHTML(){
-            let SVG = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`);
+        getOuterHTML() {
             let dm = difference(transMatrix, this.settings.m);
-            SVG.setAttribute('viewBox', getViewBox(dm));
-            SVG.setAttribute('width', w);
-            SVG.setAttribute('height', h);
-            let result = SVG.outerHTML.slice(0, -6) + this.html + '</svg>';
-            return result;
+            return `<svg width="${w}" height="${h}" viewBox="${getViewBox(dm)}" xmlns="http://www.w3.org/2000/svg">${this.html}</svg>`;
         },
         settings: getSettings()
     };
@@ -59,19 +71,9 @@ function generateSVG(s) {
         for (let obj of graphObjs) { html += obj.generateHtml(s); }
         ////////
         //////////////
-        svg = {
-            html,
-            getOuterHTML(){
-                let SVG = createElement(`<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>`);
-                let dm = difference(transMatrix, this.settings.m);
-                SVG.setAttribute('viewBox', getViewBox(dm));
-                SVG.setAttribute('width', w);
-                SVG.setAttribute('height', h);
-                let result = SVG.outerHTML.slice(0, -6) + this.html + '</svg>';
-                return result;
-            },
-            settings: s
-        };
+        svg.html = html;
+        svg.settings = s;
+        
         genSVGstatus.generated();
     }
 }
@@ -84,18 +86,14 @@ async function update(force = false) {
             let s = getSettings();
 
             // await timeout(200);
-            setTimeout(()=>{
-                
-                            generateSVG(s);
-                            
-                            if (updateStatus.isReAllowed()) {
-                                updateStatus.updated();
-                                update(...updateStatus.reupdateArgs);
-                            }
-                            updateStatus.updated();
-            }, 0);
-            
-            
+            generateSVG(s);
+            draw();
+            if (updateStatus.isReAllowed()) {
+                updateStatus.updated();
+                update(...updateStatus.reupdateArgs);
+            }
+            updateStatus.updated();
+
         } else if (updateStatus.is(updateStatus.UPDATING)) {
             updateStatus.reupdate(arguments);
         }
@@ -106,16 +104,25 @@ export function draw() {
     if (drawStatus.isAllowed()) {
         drawStatus.drawing();
 
-        svgToImage(svg.getOuterHTML(), image=>{
-            canvas.width=w * devicePixelRatio; canvas.height=h* devicePixelRatio;
-            // ctx.clearRect(0,0,w,h);
-            ctx.drawImage(image,0,0,w,h);
+        if (drawTo === 'canvas'){
+            svgToImage(svg.getOuterHTML(), image => {
+                canvas.width = w * devicePixelRatio; canvas.height = h * devicePixelRatio;
+                // ctx.clearRect(0,0,w,h);
+                ctx.drawImage(image, 0, 0, w, h);
+                if (drawStatus.isReAllowed()) {
+                    drawStatus.drawed();
+                    draw(...drawStatus.redrawArgs);
+                }
+                drawStatus.drawed();
+            });
+        }else{
+            container.innerHTML = svg.getOuterHTML();
             if (drawStatus.isReAllowed()) {
                 drawStatus.drawed();
                 draw(...drawStatus.redrawArgs);
             }
             drawStatus.drawed();
-        });
+        }
 
     } else if (drawStatus.is(drawStatus.DRAWING)) {
         drawStatus.redraw(arguments);
@@ -134,26 +141,7 @@ function difference(a, b) {
     ];
 }
 
-count.onchange = () => {
-    let span = document.querySelector("#count + span");
-    span.innerText = count.value + " per " + pxCount;
-    draw();
-    update(true);
-};
-
-expr.onchange = () => {
-    graphObjs[0].expr = eval(`x=>${expr.value}`);
-    draw();
-    update(true);
-};
-
-window.onresize = () => {
-    coorm.translate(container.clientWidth - w, container.clientHeight - h);
-    w = container.clientWidth; h = container.clientHeight;
-
-    draw();
-    update();
-};
+//#region translation, change origin position
 
 let ismousedown = false;
 let mouse;
@@ -181,13 +169,35 @@ window.onmousemove = (e) => {
     }
 };
 
-///////
-// all is setup
-///////
+//#endregion
 
-init();
+//#region changing expresion or resilution or w or h
 
-window.onresize();
-if (!autoUpdate) update(true);
+count.onchange = () => {
+    let span = document.querySelector("#count + span");
+    span.innerText = count.value + " per " + pxCount;
+    draw();
+    update(true);
+};
 
+expr.onchange = () => {
+    graphObjs[0].expr = eval(`x=>${expr.value}`);
+    draw();
+    update(true);
+};
+
+window.onresize = () => {
+    coorm.translate(container.clientWidth - w, container.clientHeight - h);
+    w = container.clientWidth; h = container.clientHeight;
+    draw();
+    update();
+};
+
+//#endregion
+
+window.onload = ()=>{
+    init();
+    window.onresize();
+    if (!autoUpdate) update();
+};
 
