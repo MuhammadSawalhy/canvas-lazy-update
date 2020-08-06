@@ -14,11 +14,29 @@ serverConfig.devServer = {
     disableHostCheck: true,
     // host: '0.0.0.0',
     port: PORT,
-    // hot: true,
+    hot: true,
     stats: {
         colors: true,
     },
 };
+
+if(serverConfig.devServer.hot){
+    const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
+    const webpack = require('webpack');
+    serverConfig.plugins = serverConfig.plugins || [];
+    serverConfig.plugins.concat([
+        new webpack.HotModuleReplacementPlugin(),
+        new webpack.NamedModulesPlugin(),
+        new BrowserSyncPlugin({
+            host: 'localhost',
+            port: 3000,
+            // proxy: 'http://localhost:8080/',
+            server: { baseDir: ['dist'] },
+            files: ['./dist/*'],
+        })
+    ]);
+}
+
 
 module.exports = [
     serverConfig,

@@ -4,6 +4,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const loader = require('sass-loader');
 
 // const {version} = require("./package.json");
 
@@ -107,6 +108,15 @@ function createConfig(target, dev, minimize, server) /*: Object */ {
                     exclude: /node_modules/,
                     use: 'babel-loader',
                 },
+
+                {
+                    test: /\.?worker\.(:?js|mjs|ejs|cjs)$/,
+                    exclude: /node_modules/,
+                    use: [
+                        { loader: 'worker-loader' },
+                        'babel-loader'
+                    ],
+                }
                 
                 // {
                 //     test: /\.(ttf|woff|woff2)$/,

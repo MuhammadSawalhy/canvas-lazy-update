@@ -1,32 +1,19 @@
 import './style/style.css';
-
-import { 
-    pxCount, drawTo, autoUpdate,
-    count, expr,
-    container, canvas, ctx, svgElm,
-} from './global.js';
-
-import { 
-    DrawStatusManager, UpdateStatusManager, GenSVGStatusManager
-} from './StatusManager.js';
-
-import { 
-    getSettings, getViewBox
-} from './coorManager.js';
-
-import graphUtils from './graphUtils.js';
+import { pxCount, drawTo, autoUpdate, count, expr, createElement, container, canvas, ctx, svgElm, image } from './global.js';
+import { DrawStatusManager, UpdateStatusManager, GenSVGStatusManager } from './StatusManager.js';
+import { getSettings, getViewBox } from './coorManager.js';
 import coorm from "./coorManager.js";
 import svgToImage from './svgToImage.js';
+import SvgWorker from './webworker/worker.js'; 
 
+const svgWorker = new SvgWorker(); 
 const drawStatus = new DrawStatusManager();
 const updateStatus = new UpdateStatusManager();
 const genSVGstatus = new GenSVGStatusManager();
+let lastSettings;
 
-let graphObjs = [];
-
-for (let i = 0; i < 20; i++) {
-    graphObjs.push(new graphUtils.func(i + `*(${expr.value})`));
-}
+init();
+update();
 
 function init() {
     window.w = container.clientWidth; window.h = container.clientHeight;
@@ -42,13 +29,16 @@ function init() {
         canvas.remove();
     }
 
+    document.body.append(createElement(`<span class=draw-to>${drawTo}</span>`))
+
+    lastSettings = getSettings();
     let __svg = {
         html: "",
         getOuterHTML() {
             let dm = difference(transMatrix, this.settings.m);
             return `<svg width="${w}" height="${h}" viewBox="${getViewBox(dm)}" xmlns="http://www.w3.org/2000/svg">${this.html}</svg>`;
         },
-        settings: getSettings()
+        settings: lastSettings
     };
     Object.defineProperty(window, 'svg', {
         get() {
@@ -60,39 +50,24 @@ function init() {
     });
 }
 
-let a = 1;
-
-function generateSVG(s) {
-    if (genSVGstatus.isAllowed()) {
-        genSVGstatus.generating();
-        //////////////
-        ////////
-        let html = '';
-        for (let obj of graphObjs) { html += obj.generateHtml(s); }
-        ////////
-        //////////////
-        svg.html = html;
-        svg.settings = s;
-        
-        genSVGstatus.generated();
-    }
-}
-
 async function update(force = false) {
 
     if (autoUpdate || force) {
         if (updateStatus.isAllowed()) {
             updateStatus.updating();
-            let s = getSettings();
 
             // await timeout(200);
-            generateSVG(s);
-            draw();
-            if (updateStatus.isReAllowed()) {
-                updateStatus.updated();
-                update(...updateStatus.reupdateArgs);
+            if (genSVGstatus.isAllowed()) {
+                genSVGstatus.generating();
+                lastSettings = getSettings();
+                let config = {
+                    pxCount,
+                    count: count.value,
+                    n: count.value*w/pxCount,
+                    w, h
+                };
+                svgWorker.postMessage({ settings: lastSettings, config });
             }
-            updateStatus.updated();
 
         } else if (updateStatus.is(updateStatus.UPDATING)) {
             updateStatus.reupdate(arguments);
@@ -105,9 +80,9 @@ export function draw() {
         drawStatus.drawing();
 
         if (drawTo === 'canvas'){
-            svgToImage(svg.getOuterHTML(), image => {
+            svgToImage(svg.getOuterHTML(), ()=>{
+                svg.imageGenerate = true;
                 canvas.width = w * devicePixelRatio; canvas.height = h * devicePixelRatio;
-                // ctx.clearRect(0,0,w,h);
                 ctx.drawImage(image, 0, 0, w, h);
                 if (drawStatus.isReAllowed()) {
                     drawStatus.drawed();
@@ -195,9 +170,22 @@ window.onresize = () => {
 
 //#endregion
 
-window.onload = ()=>{
-    init();
-    window.onresize();
-    if (!autoUpdate) update();
-};
+svgWorker.addEventListener('message', (msg)=>{
+
+    svg.settings = lastSettings;
+    svg.html = msg.data;
+
+    genSVGstatus.generated();
+
+    draw();
+
+    if (updateStatus.isReAllowed()) {
+        updateStatus.updated();
+        update(...updateStatus.reupdateArgs);
+    }
+
+    updateStatus.updated();
+
+});
+
 

@@ -33,3 +33,17 @@ svg {
   padding: 5px;
 }
 
+.draw-to{
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background: #791e1e55;
+  color: cyan;
+  border: 1px solid rgba(0, 255, 255, 0.349);
+  box-sizing: border-box;
+  padding: 0.5em;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
