@@ -1,33 +1,92 @@
-import coorm from "./coorManager.js";
 import svgUtils from './svgUtils.js';
+import * as GraphUtilsBase from '../GraphUtilsBase.js';
+
+export class func extends GraphUtilsBase.func {
+
+  constructor(graphManager, props) {
+    super(props);
+    this.gm = graphManager;
+    this.path = new svgUtils.path(this.pen);
+  }
+
+  update() {
 
 
-export class func{
-    constructor(graphManager, expr, pen){
-        pen = {'stroke': 'white', 'stroke-width': 2, 'fill': 'none', ...(pen || {})};
-        this.gm = graphManager;
-        this.expr = eval(`(x) => ${expr}`);
-        this.pen = pen;
-        this.path = new svgUtils.path(pen);
-    }
+    this.path.d = "";
+    var transform = this.gm.coorm.transform, vp = this.gm.settings.vp;
+    var s = this.gm.settings.drawingStep,
+      x = vp.xmin;
+    var point1, point2, point3;
+    this.path.beginPath();
 
-    generateHtml(coorm, config){
-        this.path.d = "";
-        let transform = this.gm.coorm.transform, vp = this.gm.settings.vp;
-        let point = transform(vp.xmin, this.expr(vp.xmin)); 
-        this.path.moveTo(point.x, point.y);
-        let n = this.gm.config.n;
-        for (let i = 1; i < n; i++) {
-            var x = i/n * vp.xwidth + vp.xmin;
-            point = transform(x, this.expr(x)); 
-            this.path.lineTo(point.x, point.y);
+
+    let checkPoint = (p1, p2, p3) => {
+      if (p2) {
+        if (
+          !isNaN(p1[0]) && !isNaN(p1[1]) &&
+          p1[1] < 2000 && p1[1] > -2000 && !(
+            (p2[1]-p3[1]) * (p1[1]-p2[1]) < 0 &&
+            Math.abs(this.dydx(x)) > 1
+          ) && true
+        ) {
+          if ((p1[0]-p3[0])**2 + (p1[1]-p3[1])**2 > 2) {
+            return true;
+          } else {
+            return 1;
+          }
+        } else {
+          return false;
         }
-        this.path.endPath(false);
-        return this.path.html;
+      } else {
+        if (!isNaN(p1[0]) && !isNaN(p1[1]) && p1[1] < 2000 && p1[1] > -2000) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    };
+
+    let doable = true;
+    let _do = () => {
+      if (x < vp.xmax) {
+        x += s;
+        point3 = transform(x, this._expr(x));
+        x += s;
+        point2 = transform(x, this._expr(x));
+        if (checkPoint(point3) && checkPoint(point2)) {
+          this.path.moveTo(point3[0], point3[1]);
+        } else {
+          return;
+        }
+
+        x += s;
+        for (; x < vp.xmax; x += s) {
+          point1 = transform(x, this._expr(x));
+          switch (checkPoint(point1, point2, point3)) {
+            case true:
+              this.path.lineTo(point1[0], point1[1]);
+              point3 = point2;
+              point2 = point1;
+              break;
+            case 1:
+              break;
+            case false:
+              return;
+          }
+        }
+      }
+      doable = false;
+    };
+
+    while (doable) {
+      _do();
     }
+
+    return this.path.endPath(false);
+  }
 
 }
 
 export default {
-    func,
+  func,
 };

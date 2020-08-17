@@ -1,16 +1,15 @@
 
-
-export const pxCount = 100;
-export const autoUpdate = true;
-export const drawTo = 'canvas';
+import SvgWorker from './webworker/worker.js';
 
 export const count = document.getElementById('count');
 export const expr = document.getElementById('expr');
 
 export const container = document.getElementsByClassName('container')[0];
-export const canvas = document.querySelector('canvas');
+export const canvas = document.querySelector('.elmCanvas');
 export const ctx = canvas.getContext('2d');
 export const image = new Image();
+export const svgWorker = new SvgWorker();
+
 
 export function createElement(html){
     let div = document.createElement('div');
@@ -21,10 +20,6 @@ export function createElement(html){
 export const svgElm = document.querySelector('svg');
 
 export default {
-    
-    pxCount,
-    autoUpdate,
-    drawTo,
     
     count,
     expr,

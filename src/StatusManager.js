@@ -24,6 +24,7 @@ class StatusManager{
     set status(v){
         this.__status = v;
     }
+    
     set(v){
         this.status = v;
     }
@@ -58,14 +59,6 @@ export class UpdateStatusManager extends StatusManager {
     constructor(){
         super( [
             'updating', 'reupdate', 'updated',
-        ]);
-    }
-}
-
-export class GenSVGStatusManager extends StatusManager {
-    constructor(){
-        super( [
-            'generating', 'regenerate', 'generated',
         ]);
     }
 }

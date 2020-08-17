@@ -1,7 +1,7 @@
 import {image} from './global.js';
 
 
-// export default async function svgToImage(svg, onload){
+// export default function svgToImage(svg, onload){
 //     let blob = new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
 //     let URL = window.URL || window.webkitURL || window;
 //     let blobURL = URL.createObjectURL(blob);
@@ -16,7 +16,7 @@ import {image} from './global.js';
 
 
 
-// export default async function svgToImage(svg, onload){
+// export default function svgToImage(svg, onload){
 //     image.onload = ()=>{
 //         if (onload) onload(image);
 //     };
@@ -27,7 +27,7 @@ import {image} from './global.js';
 
 
 
-export default async function svgToImage(svg, onload){
+export default function svgToImage(svg, onload){
     // http://stackoverflow.com/questions/3768565/drawing-a-svg-file-on-a-html5-canvas
     image.onload = ()=>{
         if (onload) onload(image);

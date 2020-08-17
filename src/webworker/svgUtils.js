@@ -1,52 +1,51 @@
-class base{
-    constructor(type, attrs={}){
-        this.attrs = attrs;
-        this.type = type;
-    }
 
-    get html(){
-        let attrs = this.getAttributes();
-        return `<${this.type} ${attrs}/>`;
-    }
+export class path {
 
-    getAttributes(){
-        let result = '';
-        for (let a in this.attrs){
-            result += `${a}="${this.attrs[a]}" `;
-        }
-        return result;
-    } 
-
-}
-
-export class path extends base{
-    constructor(attr){
-        super("path", attr);
+    constructor(){
         this.d = "";
+        this.data = new Int32Array();
+    }
+
+    beginPath(){
+        this.clearData();
     }
 
     moveTo(x,y){
-        this.d += `M${this.trim(x)},${this.trim(y)} `;
+        let index = this.data.length;
+        this.data[index] = NaN;  this.data[index+1] = NaN;  
+        this.data[index+2] = x;  this.data[index+3] = y;  
     }
+
     lineTo(x,y){
-        this.d += `L${this.trim(x)},${this.trim(y)} `;
+        let index = this.data.length;
+        this.data[index] = x;  this.data[index+1] = y;  
     }
+
     trim(a){
         if(a % 1 !== 0){
-            return Math.trunc(a) + Math.abs(Math.trunc(a%1*10))/10;
+            return Math.trunc(a) + Math.abs(Math.trunc(a%1*1000))/1000;
         }
         return a;
     }
+
     endPath(close){
-        if(close) this.d += "z";
-        this.attrs.d = this.d;
+        let index = this.data.length;
+        if(close) {
+            this.data[index] = this.data[0];
+            this.data[index+1] = this.data[1];
+        }
+        let a = this.data;
+        this.clearData();
+        return a;
     }
+
     clearData(){
-        this.d = '';
-        this.attrs.d = this.d;
+        this.data = [];
     }
+
 }
 
 export default {
     path,
 };
+
