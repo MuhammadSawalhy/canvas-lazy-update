@@ -1,5 +1,6 @@
 body {
   margin: 0;
+  background: silver;
 }
 
 .app{
@@ -13,18 +14,17 @@ body {
   width: 100%;
   overflow: hidden;
   position: relative;
-  background-color: black;
+  background-color: white;
 }
 
-svg {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+.container > * {
   width: 100%;
   height: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
-
 
 .options {
   display: flex;
@@ -33,3 +33,21 @@ svg {
   padding: 5px;
 }
 
+.draw-to{
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background: #e4090975;
+  color: rgb(0, 0, 0);
+  border: 1px solid rgba(0, 255, 255, 0.349);
+  box-sizing: border-box;
+  padding: 0.5em;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.error{
+  color: red;
+  opacity: 0.5;
+}

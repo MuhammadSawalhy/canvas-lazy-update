@@ -1,144 +1,54 @@
 import './style/style.css';
+import { workerActions } from './config.js';
+import { count, expr, container, ctx, svgWorker } from './global.js';
+import { func } from './GraphUtils.js';
+import Sketch from './Sketch.js';
+import setMathToWindow from './mathAndWindow.js';
 
-import { 
-    pxCount, drawTo, autoUpdate,
-    count, expr,
-    container, canvas, ctx, svgElm,
-} from './global.js';
+// import Hammerjs from 'hammerjs';
 
-import { 
-    DrawStatusManager, UpdateStatusManager, GenSVGStatusManager
-} from './StatusManager.js';
+window.sketch = null;
 
-import { 
-    getSettings, getViewBox
-} from './coorManager.js';
+function addFunction(expr) {
 
-import graphUtils from './graphUtils.js';
-import coorm from "./coorManager.js";
-import svgToImage from './svgToImage.js';
+    let f = new func({ expr });
+    sketch.addChildren(f);
 
-const drawStatus = new DrawStatusManager();
-const updateStatus = new UpdateStatusManager();
-const genSVGstatus = new GenSVGStatusManager();
+    svgWorker.postMessage({
+        action: workerActions.ADD_GRAPH_ELEMENT,
+        graphElement: f.objectify()
+    });
 
-let graphObjs = [];
+}
 
-for (let i = 0; i < 20; i++) {
-    graphObjs.push(new graphUtils.func(i + `*(${expr.value})`));
+function editFunction(id, expr) {
+
+    sketch.getChildren(id).expr = expr;
+
+    svgWorker.postMessage({
+        action: workerActions.EDIT_GRAPH_ELEMENT,
+        graphElement: {id, props: {expr}}
+    });
+
 }
 
 function init() {
-    window.w = container.clientWidth; window.h = container.clientHeight;
-    transMatrix = ([
-        20, 0, 0,
-        0, -20, 0,
-        w / 2, h / 2, 1
-    ]);
+    setMathToWindow();
 
-    if(drawTo === 'canvas'){
-        svgElm.remove();
-    }else{
-        canvas.remove();
+    let pxRatio = devicePixelRatio;
+    let newW = container.clientWidth * pxRatio,
+        newH = container.clientHeight * pxRatio;
+
+    ctx.canvas.width = newW; ctx.canvas.height = newH;
+    sketch = new Sketch(ctx);
+
+    let span = document.querySelector("#count + span");
+    span.innerText = count.value;
+
+    for (let i = 1; i < 2; i++) {
+        addFunction(i + '*' + expr.value);
     }
 
-    let __svg = {
-        html: "",
-        getOuterHTML() {
-            let dm = difference(transMatrix, this.settings.m);
-            return `<svg width="${w}" height="${h}" viewBox="${getViewBox(dm)}" xmlns="http://www.w3.org/2000/svg">${this.html}</svg>`;
-        },
-        settings: getSettings()
-    };
-    Object.defineProperty(window, 'svg', {
-        get() {
-            return __svg;
-        },
-        set(v) {
-            __svg = v;
-        }
-    });
-}
-
-let a = 1;
-
-function generateSVG(s) {
-    if (genSVGstatus.isAllowed()) {
-        genSVGstatus.generating();
-        //////////////
-        ////////
-        let html = '';
-        for (let obj of graphObjs) { html += obj.generateHtml(s); }
-        ////////
-        //////////////
-        svg.html = html;
-        svg.settings = s;
-        
-        genSVGstatus.generated();
-    }
-}
-
-async function update(force = false) {
-
-    if (autoUpdate || force) {
-        if (updateStatus.isAllowed()) {
-            updateStatus.updating();
-            let s = getSettings();
-
-            // await timeout(200);
-            generateSVG(s);
-            draw();
-            if (updateStatus.isReAllowed()) {
-                updateStatus.updated();
-                update(...updateStatus.reupdateArgs);
-            }
-            updateStatus.updated();
-
-        } else if (updateStatus.is(updateStatus.UPDATING)) {
-            updateStatus.reupdate(arguments);
-        }
-    }
-}
-
-export function draw() {
-    if (drawStatus.isAllowed()) {
-        drawStatus.drawing();
-
-        if (drawTo === 'canvas'){
-            svgToImage(svg.getOuterHTML(), image => {
-                canvas.width = w * devicePixelRatio; canvas.height = h * devicePixelRatio;
-                // ctx.clearRect(0,0,w,h);
-                ctx.drawImage(image, 0, 0, w, h);
-                if (drawStatus.isReAllowed()) {
-                    drawStatus.drawed();
-                    draw(...drawStatus.redrawArgs);
-                }
-                drawStatus.drawed();
-            });
-        }else{
-            container.innerHTML = svg.getOuterHTML();
-            if (drawStatus.isReAllowed()) {
-                drawStatus.drawed();
-                draw(...drawStatus.redrawArgs);
-            }
-            drawStatus.drawed();
-        }
-
-    } else if (drawStatus.is(drawStatus.DRAWING)) {
-        drawStatus.redraw(arguments);
-    }
-}
-
-function timeout(ms) { //pass a time in milliseconds to this function
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function difference(a, b) {
-    return [
-        a[0] / (b[0] || 1), a[1] / (b[1] || 1), 0,
-        a[3] / (b[3] || 1), a[4] / (b[4] || 1), 0,
-        a[6] - b[6] + w / 2, a[7] - b[7] + h / 2, 1
-    ];
 }
 
 //#region translation, change origin position
@@ -160,44 +70,97 @@ window.onmouseup = () => {
 window.onmousemove = (e) => {
     if (ismousedown) {
         let v = { x: e.x - mouse.x, y: e.y - mouse.y };
-        // let a = svg.getAttribute('viewBox').split(' ');
-        coorm.translate(v.x, v.y);
+        // let a = drawings.getAttribute('viewBox').split(' ');
+        sketch.coorm.translate(v.x, v.y);
         mouse = { x: e.x, y: e.y };
-        draw();
-        update();
-
+        requestAnimationFrame(()=>sketch.draw());
+        sketch.update();
     }
 };
 
-//#endregion
-
-//#region changing expresion or resilution or w or h
-
-count.onchange = () => {
-    let span = document.querySelector("#count + span");
-    span.innerText = count.value + " per " + pxCount;
-    draw();
-    update(true);
-};
-
-expr.onchange = () => {
-    graphObjs[0].expr = eval(`x=>${expr.value}`);
-    draw();
-    update(true);
+container.onwheel = (e) => {
+    let scalar = - Math.sign(e.deltaY) * 0.1 + 1;
+    sketch.coorm.scale(scalar, scalar);
+    requestAnimationFrame(()=>sketch.draw());
+    sketch.update();
 };
 
 window.onresize = () => {
-    coorm.translate(container.clientWidth - w, container.clientHeight - h);
-    w = container.clientWidth; h = container.clientHeight;
-    draw();
-    update();
+    let pxRatio = devicePixelRatio;
+    let newW = container.clientWidth * pxRatio, newH = container.clientHeight * pxRatio;
+    
+    sketch.coorm
+    .pipe()
+    .translate((newW - sketch.coorm.w) / 2, (newH - sketch.coorm.h) / 2)
+    .setSize(newW, newH)
+    .end();
+
+    requestAnimationFrame(()=>sketch.draw());
+    sketch.update();
+};
+
+(function touchEvents() {
+
+})();
+
+//#endregion
+
+//#region changing expresion or resolution
+
+count.onchange = () => {
+    let span = document.querySelector("#count + span");
+    span.innerText = count.value;
+    requestAnimationFrame(()=>sketch.draw());
+    sketch.update(true);
+};
+
+expr.onchange = () => {
+    for (let i = 0; i < sketch.children.length; i++) {
+        editFunction(sketch.children[i].id, (i+1) + '*' + expr.value);
+    }
+    requestAnimationFrame(()=>sketch.draw());
+    sketch.update(true);
 };
 
 //#endregion
 
-window.onload = ()=>{
-    init();
-    window.onresize();
-    if (!autoUpdate) update();
-};
+svgWorker.addEventListener('message', (msg) => {
+    let action = msg.data.action;
+    if(msg.data.error){
+        let errElm = document.querySelector('.error');
+        if(errElm.innerText  === '') var r = true;
+        errElm.innerHTML = msg.data.errMessage;
+
+        if (action === workerActions.UPDATE) {
+            if (sketch.updateStatus.isReAllowed()) {
+                sketch.updateStatus.updated();
+                sketch.update(...updateStatus.reupdateArgs);
+            } else {
+                sketch.updateStatus.status = 'ready';
+            }
+        }
+        if(r) onresize();
+
+    } else {
+        if (action === workerActions.UPDATE) {
+
+            sketch.children.settings = msg.data.settings;
+            for(let i = 0; i < sketch.children.length; i++){
+                sketch.children[i].data = msg.data.data[i];
+            }
+            requestAnimationFrame(()=>sketch.draw());
+    
+            if (sketch.updateStatus.isReAllowed()) {
+                sketch.updateStatus.updated();
+                sketch.update(...sketch.updateStatus.reupdateArgs);
+            } else {
+                sketch.updateStatus.updated();
+            }
+
+        }
+    } 
+});
+
+init();
+sketch.update(true);
 
