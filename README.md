@@ -2,8 +2,12 @@
 Make some parallelized computations and work, while part of the scene is drawn synchronously with transformation. After these computations are done, redraw the scene.
 
 # See it alive
-`npm i`
-`npm start`
+```bash
+npm i
+```
+```bash
+npm start
+```
 
 # What is the key
 - Using webworker to calculate some points of explicit math function graph
