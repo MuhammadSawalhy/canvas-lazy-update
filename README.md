@@ -17,7 +17,7 @@ npm start
 - To Do that you have to define "draw", "update" function to any new GraphUtils.js class
 
 # Contribute
-Every geek is welcom, help ake the performance rise to the sky.
+Every geek is welcom, help make the performance rise to the sky.
 
 # License
 MIT
