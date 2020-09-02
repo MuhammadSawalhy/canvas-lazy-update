@@ -45,7 +45,7 @@ function init() {
     let span = document.querySelector("#count + span");
     span.innerText = count.value;
 
-    for (let i = 1; i < 2; i++) {
+    for (let i = 1; i < 21; i++) {
         addFunction(i + '*' + expr.value);
     }
 
@@ -146,7 +146,7 @@ svgWorker.addEventListener('message', (msg) => {
 
             sketch.children.settings = msg.data.settings;
             for(let i = 0; i < sketch.children.length; i++){
-                sketch.children[i].data = msg.data.data[i];
+                sketch.children[i].update(msg.data.data[i]);
             }
             requestAnimationFrame(()=>sketch.draw());
     

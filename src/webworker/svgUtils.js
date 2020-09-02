@@ -13,17 +13,17 @@ export class path {
     moveTo(x,y){
         let index = this.data.length;
         this.data[index] = NaN;  this.data[index+1] = NaN;  
-        this.data[index+2] = x;  this.data[index+3] = y;  
+        this.data[index+2] = this.trim(x);  this.data[index+3] = this.trim(y);  
     }
 
     lineTo(x,y){
         let index = this.data.length;
-        this.data[index] = x;  this.data[index+1] = y;  
+        this.data[index] = this.trim(x);  this.data[index+1] = this.trim(y);  
     }
 
     trim(a){
         if(a % 1 !== 0){
-            return Math.trunc(a) + Math.abs(Math.trunc(a%1*1000))/1000;
+            return Math.trunc(a) + Math.abs(Math.trunc(a%1*10))/10;
         }
         return a;
     }
