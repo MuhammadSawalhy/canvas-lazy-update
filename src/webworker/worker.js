@@ -51,10 +51,7 @@ self.addEventListener('message', (msg) => {
     }
 });
 
-self.addEventListener('error', e=>{
-    e.preventDefault();
-    self.postMessage({ error: true, errMessage: e.message, action });
-});
+
 
 function getGraphElement(data) {
     if(data.type === 'func'){

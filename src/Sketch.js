@@ -7,11 +7,18 @@ import { DrawStatusManager, UpdateStatusManager } from './StatusManager.js';
 
 export default class Sketch {
 
-  constructor(ctx) {
-    this.ctx = ctx;
+  constructor(canvas) {
+    this.canvas = typeof canvas === 'string' ? document.querySelector(canvas)
+    : canvas instanceof HTMLCanvasElement ? canvas
+    : canvas instanceof CanvasRenderingContext2D ? (this.ctx = canvas).canvas
+    : null;
 
-    let w = ctx.canvas.width;
-    let h = ctx.canvas.height;
+    if (!this.canvas) throw new Error('no canvas or ctx found');
+
+    this.ctx = this.ctx || this.canvas.getContext('2d');
+
+    let w = this.canvas.width;
+    let h = this.canvas.height;
     this.coorm = new CoorManager([
       20, 0,  w/2,
       0, -20, h/2,
@@ -60,16 +67,21 @@ export default class Sketch {
 
   draw() {
     if (this.drawStatus.isAllowed()) {
-      this.drawStatus.drawing();
-      let dm = this.coorm.difference(this.children.settings.r, true);
-      this.children.settings.dm = dm;
 
-      let trans = getTransform(dm, true);
+      this.drawStatus.drawing(); // set status to drawing
+
+      // get the change in transformation between the current
+      // and the transformation send to the webworker to calculate
+      // the sketch's children data
+      let dm = this.coorm.difference(this.children.settings.r, true);
+      this.children.settings.dm = dm; // cache to use in drawing process 
+
+      let trans = getTransform(dm, true); // get the transform argument from the tansformation matrix, the arguments will be passed to the drawing context "ctx"
       this.ctx.canvas.width = this.coorm.w; this.ctx.canvas.height = this.coorm.h;
-      this.drawCoor();
-      this.ctx.setTransform(...trans);
+      this.drawCoor(); // draw coordinates
+      this.ctx.setTransform(...trans); // set the transformation to the drawing context
       for (let c of this.children) {
-        c.draw(this.ctx);
+        if (c.drawable) c.draw(this.ctx);
       }
       if (this.drawStatus.isReAllowed()) {
         this.drawStatus.drawed();

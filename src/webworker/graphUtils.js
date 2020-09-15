@@ -20,7 +20,7 @@ export class func extends GraphUtilsBase.func {
     this.path.beginPath();
 
 
-    let checkPoint = (p1, p2, p3) => {
+    let checkPoint = (p1, p2, p3)=>{
       if (p2) {
         if (
           !isNaN(p1[0]) && !isNaN(p1[1]) &&
@@ -44,7 +44,7 @@ export class func extends GraphUtilsBase.func {
           return false;
         }
       }
-    };
+    }
 
     let doable = true;
     let _do = () => {

@@ -1,7 +1,7 @@
 {
   "presets": [
     [
-      "@babel/preset-env",
+      "@babel/env",
       {
         "useBuiltIns": "entry",
         "corejs": 2
@@ -10,7 +10,7 @@
   ],
   "plugins": [
     [
-      "@babel/plugin-proposal-object-rest-spread",
+      "@babel/transform-spread",
       {
         "loose": true,
         "useBuiltIns": true

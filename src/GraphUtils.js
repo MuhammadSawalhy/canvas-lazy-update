@@ -4,6 +4,7 @@ export class func extends base.func{
     
     constructor(){
         super(...arguments);
+        this.drawable = true;
     }
 
     update(data){

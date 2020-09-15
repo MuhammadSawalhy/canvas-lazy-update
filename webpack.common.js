@@ -1,23 +1,23 @@
 /**
- *    here is two main things for webpack: 
+ *    here is two main things for webpack:
  * the targets which will produce different packages
  * the second one is createConfig function inside this
- * function we are triming and modifiying the passed 
+ * function we are triming and modifiying the passed
  * options then do throw generation of the configuration.
  * You can find therwe two other helper functions: getRules
  * and getPlugins. In these two helper function a lot of
  * consideration are directed to "options.mode".
- * 
+ *
  *    At the end you can find a devServer property is specified
- * to the configuration object "config", putting the 
+ * to the configuration object "config", putting the
  * webpack-dev-server options: host, port, hot, etc...
  */
 
-
-const path = require('path');
-const TerserPlugin = require('terser-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require("path");
+const TerserPlugin = require("terser-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 /*::
 type Target = {|
@@ -31,100 +31,103 @@ type Target = {|
  */
 const targets /*: Array<Target> */ = [
   {
-    name: 'lazyUpdate',
-    
-    // entry: './src/index.js', // polyfill for some code such as async function. 
-    entry: ['@babel/polyfill', './src/index.js'], // polyfill for some code such as async function. 
-    library: 'lazyUpdate',
-  }
-];
+    name: "lazyUpdate",
 
+    // entry: './src/index.js', // polyfill for some code such as async function.
+    entry: ["@babel/polyfill", "./src/index.js"], // polyfill for some code such as async function.
+    library: "lazyUpdate",
+  },
+];
 
 /**
  * dev, minimize, devServer
  * Create a webpack config for given target
  */
 function createConfig(target, options) /*: Object */ {
+  let dev = options.mode === "development" || options.mode === "dev-server",
+    devServer = options.mode === "dev-server",
+    analyze = options.mode === "analyze";
 
-  let dev = options.mode === 'development' || options.mode === 'dev-server',
-      devServer = options.mode === 'dev-server',
-      analyze = options.mode === 'analyze';
+  void (function prepareOptions() {
+    if (dev) {
+      // for webpack-dev-server
+      let devServerPort =
+        process.argv.indexOf("--port") > -1
+          ? process.argv[process.argv.indexOf("--port") + 1]
+          : 7936;
+      let devServerHost =
+        process.argv.indexOf("--host") > -1
+          ? process.argv[process.argv.indexOf("--host") + 1]
+          : "localhost";
 
-
-  void function prepareOptions(){
-    if(dev){
-      let devServerPort = process.argv.indexOf('--port') > -1 ? process.argv[process.argv.indexOf('--port') + 1] : 7936;
-      let devServerHost = process.argv.indexOf('--host') > -1 ? process.argv[process.argv.indexOf('--host') + 1] : 'localhost';
-      let devServerHot = process.argv.indexOf('--hot') > -1;
+      // for browser-sync
+      let devServerHot = process.argv.indexOf("--hot") > -1;
       let port = process.env.PORT || 8080;
-      let host = process.env.HOST || 'localhost';
-      
-      options = { host, port, devServerPort, devServerHost, devServerHot,
-        ...options
+      let host = process.env.HOST || "localhost";
+
+      options = {
+        host,
+        port,
+        devServerPort,
+        devServerHost,
+        devServerHot,
+        ...options,
       };
     }
-  }();
-
+  })();
 
   let minimize = !dev;
 
+  function getPlugins() {
+    var plugins = [];
 
-  function getPlugins(){
-    
-    var devServerPlugins=[], devPlugins=[], analyzePlugins=[];
+    if (dev) {
+      if (devServer) {
+        let BrowserSyncPlugin = require("browser-sync-webpack-plugin");
+        plugins.push(
+          new BrowserSyncPlugin(
+            {
+              host: options.host,
+              port: options.port,
+              proxy: `http://${options.devServerHost}:${options.devServerPort}/`,
+            },
+            {
+              reload: false,
+            }
+          )
+        );
 
-    if(devServer){
-      devServerPlugins = [
-        
-      ];
-
-      if(options.hot){
-        const webpack = require('webpack');
-        serverConfig.plugins.concat([
+        if (options.hot) {
+          const webpack = require("webpack");
+          plugins.concat([
             new webpack.HotModuleReplacementPlugin(),
-            new webpack.NamedModulesPlugin(),
-        ]);
+          ]);
+        }
       }
     }
 
-    if(dev){
-      let BrowserSyncPlugin = require('browser-sync-webpack-plugin');
-      devPlugins = [
-        new BrowserSyncPlugin({
-          host: options.host,
-          port: options.port,
-          proxy: `http://${options.devServerHost}:${options.devServerPort}/`,
-        }, {
-            reload: false,
-        }),
-  
-        ...devServerPlugins
-      ];
-    }
-    
-    if(analyze){
-      analyzePlugins = [
-        new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin) (),
-      ];
+    if (analyze) {
+      plugins.push(
+        new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)(),
+      );
     }
 
-    return [
+    plugins.push(
       new HtmlWebpackPlugin({
-        title: 'lazy drawings update',
-        template: './index.html',
+        title: "lazy drawings update",
+        template: "./index.html"
       }),
-      !dev && new MiniCssExtractPlugin({
-        filename: minimize ? '[name]-[hash].min.css' : '[name]-[hash].css',
-      }),
-      !devServer && new (require('clean-webpack-plugin').CleanWebpackPlugin) (),
-      ...devPlugins,
-      ...analyzePlugins
-    ].filter(Boolean);
+      
+        new MiniCssExtractPlugin({
+          filename: minimize ? "[name]-[hash].min.css" : "[name]-[hash].css",
+        }),
+      !devServer && new CleanWebpackPlugin(),
+    );
+
+    return plugins.filter(Boolean);
   }
 
-
-  function getRules(){
-
+  function getRules() {
     // // use only necessary fonts, overridable by environment variables
     // // from the least supported to the most supported
     // const browserslist = require('browserslist')();
@@ -143,21 +146,20 @@ function createConfig(target, options) /*: Object */ {
     //     });
     // }
 
-    const cssLoaders /*: Array<Object> */ = [{ loader: 'css-loader' }];
+    const cssLoaders /*: Array<Object> */ = [{ loader: "css-loader" }];
     if (minimize) {
       cssLoaders[0].options = { importLoaders: 1 };
       cssLoaders.push({
-        loader: 'postcss-loader',
-        options: { plugins: [require('cssnano')()] },
+        loader: "postcss-loader",
+        options: { plugins: [require("cssnano")()] },
       });
     }
 
     return [
-
       {
         test: /\.css$/,
         use: [
-          dev ? 'style-loader' : MiniCssExtractPlugin.loader,
+          MiniCssExtractPlugin.loader,
           ...cssLoaders,
         ],
       },
@@ -165,10 +167,10 @@ function createConfig(target, options) /*: Object */ {
       {
         test: /\.sass$/,
         use: [
-          dev ? 'style-loader' : MiniCssExtractPlugin.loader,
+          dev ? "style-loader" : MiniCssExtractPlugin.loader,
           ...cssLoaders,
           {
-            loader: 'sass-loader',
+            loader: "sass-loader",
             // options: lessOptions,
           },
         ],
@@ -177,7 +179,7 @@ function createConfig(target, options) /*: Object */ {
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        use: 'babel-loader',
+        use: "babel-loader",
       },
 
       {
@@ -185,11 +187,12 @@ function createConfig(target, options) /*: Object */ {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'worker-loader',
+            loader: "worker-loader",
             options: {
-              filename: minimize ? '[name]-[hash].min.js' : '[name]-[hash].js',
-            }
-          }, // 'babel-loader'
+              filename: minimize ? "[name]-[hash].min.js" : "[name]-[hash].js",
+            },
+          },
+          'babel-loader'
         ],
       },
 
@@ -202,33 +205,31 @@ function createConfig(target, options) /*: Object */ {
       //         },
       //     }],
       // },
-
     ];
   }
 
-
   let config = {
-    mode: dev ? 'development' : 'production',
+    mode: dev ? "development" : "production",
     context: __dirname,
     entry: {
       [target.name]: target.entry,
     },
     output: {
-      filename: minimize ? '[name]-[hash].min.js' : '[name]-[hash].js',
+      filename: minimize ? "[name]-[hash].min.js" : "[name]-[hash].js",
       library: target.library,
-      libraryTarget: 'umd',
-      libraryExport: 'default',
+      libraryTarget: "umd",
+      libraryExport: "default",
       // Enable output modules to be used in browser or Node.
       // See: https://github.com/webpack/webpack/issues/6522
       globalObject: "(typeof self !== 'undefined' ? self : this)",
-      path: path.resolve(__dirname, 'dist'),
+      path: path.resolve(__dirname, "dist"),
     },
     module: {
-      rules: getRules()
+      rules: getRules(),
     },
     // externals: 'katex',
     plugins: getPlugins(),
-    devtool: dev && 'inline-source-map',
+    devtool: dev && "source-map",
     optimization: {
       minimize,
       minimizer: [
@@ -240,14 +241,14 @@ function createConfig(target, options) /*: Object */ {
           },
         }),
       ],
+      namedModules: true,
     },
     performance: {
       hints: false,
     },
   };
 
-
-  if(devServer){
+  if (devServer) {
     config.devServer = {
       contentBase: [__dirname],
       // Allow server to be accessed from anywhere, which is useful for
@@ -258,16 +259,13 @@ function createConfig(target, options) /*: Object */ {
       port: options.devServerPort,
       hot: options.devServerHot,
       stats: {
-          colors: true,
+        colors: true,
       },
     };
   }
 
-
   return config;
-
 }
-
 
 module.exports = {
   targets,
